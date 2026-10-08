@@ -1,0 +1,21 @@
+services:
+  auth-service:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      AUTH_SECRET_KEY: "ejemplo-local-no-usar-en-produccion-7f9a2c4d"
+      DATABASE_URL: sqlite:////data/auth.db
+    volumes:
+      - auth_data:/data
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  auth_data:
