@@ -1,0 +1,121 @@
+{
+  "info": {
+    "_postman_id": "97c877ac-3558-4d88-8d6f-356ac6d6fb19",
+    "name": "mcp",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "29135394"
+  },
+  "item": [
+    {
+      "name": "chat",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8003/chat",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8003",
+          "path": [
+            "chat"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "validate",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "login",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Host",
+            "value": "mcp.example.local",
+            "type": "text"
+          },
+          {
+            "key": "response-code",
+            "value": "200",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"stringst\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "register",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Host",
+            "value": "mcp.example.local",
+            "type": "text"
+          },
+          {
+            "key": "response-code",
+            "value": "200",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"stringst\"\r\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/auth/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
