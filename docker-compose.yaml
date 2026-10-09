@@ -1,0 +1,135 @@
+services:
+  auth-service:
+    build:
+      context: ./auth-provider
+    ports:
+      - "8000:8000"
+    environment:
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY:-local-only-change-this-secret-before-production-123456}
+      DATABASE_URL: sqlite:////data/auth.db
+    volumes:
+      - auth_data:/data
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/openapi.json', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  currency-mcp:
+    build:
+      context: ./currency_management_smcp
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8001"
+      URL_PREFIX: /api
+      AUTH_PROVIDER_URL: http://auth-service:8000/auth/validate
+      FRANKFURTER_BASE_URL: https://api.frankfurter.dev/v2
+      FRANKFURTER_TIMEOUT_SECONDS: "10"
+      API_SECRET_NAME: local-unused
+      BASIC_INFORMATION_ENDPOINT: http://localhost/unused
+      DETAIL_INFORMATION_ENDPOINT: http://localhost/unused
+      CURRENCYCONVERTER_ENDPOINT: https://api.frankfurter.dev/v2
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/docs', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  redis:
+    image: redis/redis-stack-server:7.4.0-v3
+    user: "999:1000"
+    volumes:
+      - agent_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  currency-agent:
+    build:
+      context: ./currency_management_aiagent
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      APP_PORT: "8003"
+      AUTH_PROVIDER_URL: http://auth-service:8000/auth/validate
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      LLM_USE_SECRETS: "false"
+      LLM_BASE_URL: ${LLM_BASE_URL:-https://api.openai.com/v1}
+      MODEL_NAME: ${MODEL_NAME:-gpt-4o-mini}
+      MCP_CONNECTION_1_NAME: currency
+      MCP_CONNECTION_1_ENDPOINT: http://currency-mcp:8001/api/mcp
+      AWS_REGION: us-east-1
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
+      REDIS_SSL: "false"
+      REDIS_CREDENTIALS_FROM_SECRETS: "false"
+      OTEL_ENABLED: "false"
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      currency-mcp:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8003/health', timeout=3)"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  auth_data:
+  agent_redis_data:

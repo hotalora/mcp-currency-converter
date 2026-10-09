@@ -1,0 +1,73 @@
+name: $(Build.SourceBranchName).$(date:yyyyMMdd)$(rev:.r)
+
+variables:
+  componentName: 'currency_management_aiagent'
+  projectPath: 'currency_management_aiagent'
+  artifactory.RepositoryPath: 'build-$(Build.Repository.Name)'
+  artifactory.fullNameComponent: '$(Build.Repository.Name)_$(componentName)'
+
+resources:
+  - repo: self
+    clean: true
+
+trigger:
+  branches:
+    include:
+      - master
+      - trunk
+      - main
+      - feature/*
+  paths:
+    include:
+      - 'currency_management_aiagent/*'
+
+stages:
+- stage: CI
+  jobs:
+  - job: build
+    displayName: 'Build'
+    pool:
+      name: Build
+    steps:
+
+    - task: SonarQubePrepare@7
+      displayName: 'Prepare analysis on SonarQube'
+      inputs:
+        SonarQube: SonarQube
+        scannerMode: CLI
+        configMode: manual
+        cliProjectKey: $(Build.Repository.Name)_$(componentName)
+        cliProjectName: $(Build.Repository.Name)_$(componentName)
+        cliProjectVersion: $(Build.BuildNumber)
+        extraProperties: |
+          sonar.python.coverage.reportPaths=coverage.xml
+          sonar.sources=$(projectPath)
+          sonar.exclusions=**/test_*.py,**/*_test.py
+
+    - script: |
+        pip install uv
+        cd $(projectPath)
+        uv sync
+        uv run pytest --cov --cov-report=xml:$(System.DefaultWorkingDirectory)/coverage.xml --junitxml=$(System.DefaultWorkingDirectory)/junit.xml
+      displayName: 'Install dependencies and run tests'
+
+    - task: PublishTestResults@2
+      displayName: 'Publish test results'
+      condition: succeededOrFailed()
+      inputs:
+        testResultsFormat: 'JUnit'
+        testResultsFiles: 'junit.xml'
+        searchFolder: '$(System.DefaultWorkingDirectory)'
+
+    - task: Sonar-buildbreaker@8
+      displayName: 'Break Build on Quality Gate Failure'
+      inputs:
+        SonarQube: SonarQube
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish deployment artifacts'
+      condition: and(succeeded(), eq(variables['Build.SourceBranch'],'refs/heads/trunk'))
+      inputs:
+        PathtoPublish: '$(projectPath)/deployment'
+        ArtifactName: '_artifact'
+        publishLocation: 'Container'

@@ -1,0 +1,36 @@
+name: "$(Build.SourceBranchName).$(date:yyyyMMdd)$(rev:.r)"
+trigger:
+  branches:
+    include:
+      - trunk
+      - feature/*
+  paths:
+    include:
+      - currency_management_smcp/*
+resources:
+  - repo: self
+    clean: "true"
+    fetchDepth: "1"
+
+variables:
+  - group: nu1041001-mcp-server-scaffold-python-dev-cors-settings
+  - name: pythonVersion
+    value: '3.13'
+  - name: component-name
+    value: currency_management_smcp
+  - name: project-name
+    value: plataforma-ia
+
+stages:
+  - stage: Build
+    displayName: Build and Publish
+    jobs:
+      - job: Linux
+        displayName: Build and publication of artifact
+        pool:
+          name: Build
+          demands:
+            - Agent.OS -equals Linux
+        steps:
+          - template: /currency_management_smcp/deployment/pipelines/build.yml
+          - template: /currency_management_smcp/deployment/pipelines/deploy.yml

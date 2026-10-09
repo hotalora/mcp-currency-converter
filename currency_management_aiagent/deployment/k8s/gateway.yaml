@@ -1,0 +1,53 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: #{service}#-gateway
+  namespace: #{namespace}#
+  labels:
+    app.bancolombia.com.co/env: #{env}#
+    app.bancolombia.com.co/cost-center: #{cost-center}#
+    app.bancolombia.com.co/application-code: #{application-code}#
+    app.bancolombia.com.co/project: #{project-name}#
+    app.bancolombia.com.co/responsible: #{responsible}#
+
+   
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - #{gateway-internal-host}#
+
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: #{service}#-vs
+  namespace: #{namespace}#
+  labels:
+    app.bancolombia.com.co/env: #{env}#
+    app.bancolombia.com.co/cost-center: #{cost-center}#
+    app.bancolombia.com.co/application-code: #{application-code}#
+    app.bancolombia.com.co/project: #{project-name}#
+    app.bancolombia.com.co/responsible: #{responsible}#
+
+spec:
+  hosts:
+    - #{gateway-internal-host}#
+  gateways:
+    - #{service}#-gateway
+  http:
+    - match:
+        - uri:
+            prefix: "#{path-prefix}#"
+      rewrite:
+        uri: '/'
+      route:
+        - destination:
+            host: #{service}#
+            port:
+              number: 80
